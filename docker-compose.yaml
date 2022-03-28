@@ -1,0 +1,83 @@
+version: '3.1'
+
+services:
+
+  mysql:
+    image: mysql
+    container_name: mysql
+    restart: unless-stopped
+    command: --character-set-server=utf8 --collation-server=utf8_bin --authentication_policy=mysql_native_password
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - zabbix-net
+    volumes:
+      - ./databases:/var/lib/mysql
+    cap_add:
+      - SYS_NICE  # CAP_SYS_NICE
+
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql
+    container_name: zabbix-server
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      DB_SERVER_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - 10051:10051 
+    networks:
+      - zabbix-net
+      
+  zabbix-web-server:
+    image: zabbix/zabbix-web-nginx-mysql
+    container_name: zabbix-web-server
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - zabbix-server
+    environment:
+      DB_SERVER_HOST: mysql
+      ZBX_SERVER_HOST: zabbix-server
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - 80:8080
+    networks:
+      - zabbix-net
+      
+  zabbix-server-agent:
+    image: zabbix/zabbix-agent
+    container_name: zabbix-server-agent
+    restart: unless-stopped
+    environment:
+      # ZBX_HOSTNAME: zabbix-server-agent
+      ZBX_SERVER_HOST: zabbix-server
+    ports:
+      - 10050:10050
+    networks:
+      - zabbix-net
+      
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - 8080:8080
+    networks:
+      - zabbix-net
+
+networks:
+  zabbix-net:
+    driver: bridge

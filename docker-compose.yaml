@@ -67,6 +67,23 @@ services:
     networks:
       - zabbix-net
       
+  grafana:
+    image: grafana/grafana:8.2.6
+    container_name: grafana
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - zabbix-server
+      - zabbix-web-server
+    environment:
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource,alexanderzobnin-zabbix-app
+    ports:
+      - 3000:3000
+    networks:
+      - zabbix-net
+    volumes:
+      - zabbix-grafana-data:/var/lib/grafana
+
   adminer:
     image: adminer:4.8.1
     container_name: adminer
@@ -86,3 +103,5 @@ networks:
 volumes:
   zabbix-mysql-data:
     name: zabbix-mysql-data
+  zabbix-grafana-data:
+    name: zabbix-grafana-data

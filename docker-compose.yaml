@@ -1,9 +1,9 @@
-version: '3.1'
+version: '3.9'
 
 services:
 
   mysql:
-    image: mysql
+    image: mysql:8.0
     container_name: mysql
     restart: unless-stopped
     command: --character-set-server=utf8 --collation-server=utf8_bin --authentication_policy=mysql_native_password
@@ -15,12 +15,12 @@ services:
     networks:
       - zabbix-net
     volumes:
-      - ./databases:/var/lib/mysql
+      - zabbix-mysql-data:/var/lib/mysql
     cap_add:
       - SYS_NICE  # CAP_SYS_NICE
 
   zabbix-server:
-    image: zabbix/zabbix-server-mysql
+    image: zabbix/zabbix-server-mysql:alpine-6.0-latest
     container_name: zabbix-server
     restart: unless-stopped
     depends_on:
@@ -37,7 +37,7 @@ services:
       - zabbix-net
       
   zabbix-web-server:
-    image: zabbix/zabbix-web-nginx-mysql
+    image: zabbix/zabbix-web-nginx-mysql:alpine-6.0-latest
     container_name: zabbix-web-server
     restart: unless-stopped
     depends_on:
@@ -55,20 +55,20 @@ services:
     networks:
       - zabbix-net
       
-  zabbix-server-agent:
-    image: zabbix/zabbix-agent
-    container_name: zabbix-server-agent
+  zabbix-agent:
+    image: zabbix/zabbix-agent:alpine-6.0-latest
+    container_name: zabbix-agent
     restart: unless-stopped
     environment:
-      # ZBX_HOSTNAME: zabbix-server-agent
+      ZBX_HOSTNAME: zabbix-agent
       ZBX_SERVER_HOST: zabbix-server
     ports:
       - 10050:10050
     networks:
       - zabbix-net
-      
+
   adminer:
-    image: adminer
+    image: adminer:4.8.1
     container_name: adminer
     restart: always
     depends_on:
@@ -82,3 +82,7 @@ networks:
   zabbix-net:
     driver: bridge
     name: zabbix-net
+
+volumes:
+  zabbix-mysql-data:
+    name: zabbix-mysql-data

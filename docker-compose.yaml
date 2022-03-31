@@ -66,7 +66,7 @@ services:
       - 10050:10050
     networks:
       - zabbix-net
-
+      
   adminer:
     image: adminer:4.8.1
     container_name: adminer
